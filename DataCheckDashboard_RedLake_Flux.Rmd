@@ -55,12 +55,14 @@ read_column_number <- function(colname){
 
 data8 <- ldply(flux.files2[1128:1212], read_column_number)
 
-data9 <- ldply(flux.files2[1213:1262], read_column_number)
+data9 <- ldply(flux.files2[1213:1278], read_column_number)
+
+data10 <- ldply(flux.files2[1279:1306],read_column_number)
 
 ## read the flux files as csv and combine into single dataframe
 #data <- rbind(data1, data2, data3, data4, data5, data6, data7)
  
- data <- rbind(data8,data9)
+ data <- rbind(data8,data9,data10)
 
 # general column number is 211, select files
 # 10 Oct 2024 updated smartflux to collect all variables which increased columns from 211 to 215, add 215 to filter
