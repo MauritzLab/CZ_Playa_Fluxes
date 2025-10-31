@@ -53,16 +53,16 @@ read_column_number <- function(colname){
 
 #data7 <- ldply(flux.files2[980:1128], read_column_number)
 
-data8 <- ldply(flux.files2[1128:1212], read_column_number)
+#data8 <- ldply(flux.files2[1128:1212], read_column_number)
 
 data9 <- ldply(flux.files2[1213:1278], read_column_number)
 
-data10 <- ldply(flux.files2[1279:1341],read_column_number)
+data10 <- ldply(flux.files2[1279:1362],read_column_number)
 
 ## read the flux files as csv and combine into single dataframe
 #data <- rbind(data1, data2, data3, data4, data5, data6, data7)
  
- data <- rbind(data8,data9,data10)
+ data <- rbind(data9,data10)
 
 # general column number is 211, select files
 # 10 Oct 2024 updated smartflux to collect all variables which increased columns from 211 to 215, add 215 to filter
@@ -218,7 +218,7 @@ Graph three variables in parallel
 renderPlot({
   c <- flux.long %>%
     filter(date >= input$daterange[[1]] & date <= input$daterange[[2]] &
-           variable==input$variable1)
+           str_detect(variable,input$variable1))
   
   ggplot(c, aes(date_time, value)) + 
     labs(y=input$variable1)+
@@ -230,7 +230,7 @@ renderPlot({
 renderPlot({
   c <- flux.long %>%
     filter(date >= input$daterange[[1]] & date <= input$daterange[[2]] &
-           variable==input$variable2)
+           str_detect(variable,input$variable2))
   
   ggplot(c, aes(date_time, value)) +
     labs(y=input$variable2)+
@@ -241,7 +241,7 @@ renderPlot({
 renderPlot({
   c <- flux.long %>%
     filter(date >= input$daterange[[1]] & date <= input$daterange[[2]] &
-           variable==input$variable3)
+           str_detect(variable,input$variable3))
   
   ggplot(c, aes(date_time, value)) +
     labs(y=input$variable3)+
