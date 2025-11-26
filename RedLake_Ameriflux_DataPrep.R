@@ -28,7 +28,7 @@ source(paste0("https://raw.githubusercontent.com/MargueriteM/R_functions/master/
 #
 
 # get data from summaries folder
-flux.files2 <- list.files(path="~/Desktop/OneDrive - University of Texas at El Paso/Tower Data/JER_Playa/Data/SmartFlux/summaries",
+flux.files2 <- list.files(path="C:/Users/memauritz/OneDrive - University of Texas at El Paso/Tower Data/JER_Playa/Data/Data_DL_Collect/SmartFlux/summaries",
                           full.names=TRUE,
                           pattern=".txt")
 
@@ -50,36 +50,70 @@ data3 <- ldply(flux.files2[174:241], read_column_number)
 
 data4 <- ldply(flux.files2[242:280], read_column_number)
 
+data5 <- ldply(flux.files2[500:727], read_column_number)
 
-data <- rbind(data1, data2, data3, data4)
+data6 <- ldply(flux.files2[727:980], read_column_number)
+
+data7 <- ldply(flux.files2[980:1128], read_column_number)
+
+data8 <- ldply(flux.files2[1128:1212], read_column_number)
+
+data9 <- ldply(flux.files2[1213:1278], read_column_number)
+
+data10 <- ldply(flux.files2[1279:1382],read_column_number)
+
+data <- rbind(data1, data2, data3, data4, data5, data6, data7, data8, data9, data10)
 
 # read the flux files as csv and combine into single dataframe
 
 # general column number is 211, select files
+# 10 Oct 2024 updated smartflux to collect all variables which increased columns from 211 to 215, add 215 to filter
 flux.files.read <- data %>%
-  filter(colnumber==211) %>%
-  mutate(file.path = paste("~/Desktop/OneDrive - University of Texas at El Paso/Tower Data/JER_Playa/Data/SmartFlux/summaries/",
+  filter(colnumber==211|colnumber==215) %>%
+  mutate(file.path = paste("C:/Users/memauritz/OneDrive - University of Texas at El Paso/Tower Data/JER_Playa/Data/Data_DL_Collect/SmartFlux/summaries/",
                            file,".txt",sep=''))
+
 # get column names and units from complete summary files
-flux.units2 <- fread(flux.files.read$file.path[1], sep="\t", dec=".", header=TRUE, skip=0)[1,]
+flux.units2 <- fread(flux.files.read[flux.files.read$colnumber==211,]$file.path[1], sep="\t", dec=".", header=TRUE, skip=0, fill = TRUE)[1,]
 
 # get data from complete summary files
-flux.data2 <- do.call("rbind", lapply(flux.files.read$file.path, header = FALSE, fread, sep="\t", dec=".",
-                                      skip = 2, fill=TRUE, na.strings="NaN", col.names=colnames(flux.units2)))
+flux.data2 <- do.call("rbind", lapply(flux.files.read$file.path[1:747], header = FALSE, fread, sep="\t", dec=".",skip = 2, fill=TRUE, na.strings="NaN", col.names=colnames(flux.units2)))
+
+ flux.data2 <- do.call("rbind", lapply(flux.files.read[flux.files.read$colnumber==211,]$file.path, header = FALSE, fread, sep="\t", dec=".",skip = 2, fill=TRUE, na.strings="NaN", col.names=colnames(flux.units2)))
 
 # format date_time variable
-# create timestamp start/end column
-# datafile name contains start time, "time" column contains end time of integration period
-flux.data2 <- flux.data2 %>%
-  mutate(TIMESTAMP_END=ymd_hms(paste(date,time,sep=" ")),
-         TIMESTAMP_START=TIMESTAMP_END-minutes(30))
+ flux.data2 <- flux.data2 %>%
+   mutate(date_time=ymd_hms(paste(date,time,sep=" ")))
+
+# 10 Oct 2024 updated smartflux to collect all variables which increased columns from 211 to 215 read all files with 215 columns seperately
+# get column names and units from complete summary files
+flux.units2.av <- fread( flux.files.read[flux.files.read$colnumber==215,]$file.path[2], sep="\t", dec=".", header=TRUE, skip=0, fill = TRUE)[1,]
+
+# get data from complete summary files
+#flux.data2.av <- do.call("rbind", lapply(flux.files.read$file.path[908:nrow(flux.files.read)], header = FALSE, fread, sep="\t", dec=".",skip = 2, fill=TRUE, na.strings="NaN", col.names=colnames(flux.units2.av)))
+# count total number of files with 215 columns of data,
+nrow.215 <- nrow(flux.files.read[flux.files.read$colnumber==215,])
+flux.data2.av <- do.call("rbind", lapply(flux.files.read[flux.files.read$colnumber==215,]$file.path[2:nrow.215], header = FALSE, fread, sep="\t", dec=".",skip = 2, fill=TRUE, na.strings="NaN", col.names=colnames(flux.units2.av)))
+
+# format date_time variable
+flux.data2.av <- flux.data2.av %>%
+  mutate(date_time=ymd_hms(paste(date,time,sep=" ")))
+
+# combine 211 column flux file with 215 row flux file
+ flux.data2 <- rbind(flux.data2, flux.data2.av, fill=TRUE)
+
 
 # check column names
 colnames(flux.data2)
  
 # make sure timestamp start/end are first two columns and remove columns "date", "time" to avoid confusion
+
+# create a timestamp_start and _end column
+flux.data2[,TIMESTAMP_START := date_time-minutes(30)]
+flux.data2[,TIMESTAMP_END := date_time]
+
 # format all columns to be in the same order: 
-names_all <- colnames(flux.data2[,!c("TIMESTAMP_START","TIMESTAMP_END","date","time"),with=FALSE])
+names_all <- colnames(flux.data2[,!c("TIMESTAMP_START","TIMESTAMP_END","date","time","date_time"),with=FALSE])
 names_output <- c("TIMESTAMP_START","TIMESTAMP_END",names_all)
 
 setcolorder(flux.data2,names_output)
@@ -304,6 +338,19 @@ ggplot(footprint.data)+
 
 
 
+# save biomet file for Enrique
+biomet.dat <- flux.data2 %>%
+  select(TIMESTAMP_START,TIMESTAMP_END, LWIN_1_1_1, LWOUT_1_1_1,  WD_1_1_1,WS_1_1_1, MWS_1_1_1, PA_1_1_1, PPFD_1_1_1, P_RAIN_1_1_1, RG_1_1_1, RN_1_1_1, SHF_1_1_1, SHF_2_1_1,
+         SHF_3_1_1,SWC_1_1_1, SWC_1_2_1, SWC_1_3_1, SWC_1_4_1, SWC_1_5_1,RH_1_1_1,RN_1_1_1, SHF_1_1_1, SHF_2_1_1, SHF_3_1_1, SWC_1_1_1, SWC_1_4_1, SWOUT_1_1_1,
+         TA_1_1_1, TC_1_1_1, TS_1_1_1, TS_1_2_1, TS_1_3_1, TS_1_4_1, TS_1_5_1, TS_2_1_1, TS_3_1_1)
+
+# save biomet data to email to Enrique
+setwd("C:/Users/memauritz/OneDrive - University of Texas at El Paso/Tower Data/JER_Playa/Data/Biomet")
+write.table(biomet.dat,
+                        file = paste("US-Jo3_BIOMET_",format(min(biomet.dat$TIMESTAMP_START),"%Y%m%d%H%M%S"),"_",
+                                     format(max(biomet.dat$TIMESTAMP_END),"%Y%m%d%H%M%S"),
+                                    ".csv",sep=""),
+                       sep=',', dec='.', row.names=FALSE, na="-9999", quote=FALSE)
 
 # save to upload to ameriflux, save to server: 
 # <SITE_ID>_<RESOLUTION>_<TS-START>_<TS-END>_<OPTIONAL>.csv
