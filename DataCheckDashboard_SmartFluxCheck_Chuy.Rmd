@@ -1,0 +1,470 @@
+---
+title: "DataCheckDashboard_RedLake_Flux"
+author: "Victoria Martinez"
+date: '2023-03-17'
+output: flexdashboard::flex_dashboard
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+# # load flux results data from Smartflux system   
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(stringr)
+library(data.table)
+library(plyr)
+library(cowplot)
+
+# get windrose function from github
+source(paste0("https://raw.githubusercontent.com/MargueriteM/R_functions/master/plot.windrose.R"))
+
+# working directory (don't need to set, all file reads have full path)
+# setwd("~/Desktop/OneDrive - University of Texas at El Paso/CZ_Drylands/JER_RedLakePlaya/Data/SmartFlux/results/2021/09")
+
+
+# get data from summaries folder
+flux.files2 <- list.files(path="D:/summaries",full.names=TRUE)
+
+#flux.files2 <- list.files(path="C:/Users/vmartinez62/OneDrive - University of Texas at El Paso/CZO_data/Bahada/CR3000/L1/Flux/Bahada_CR3000_flux_L1_2025",full.names=TRUE)
+
+# read the column number for each summary file
+read_column_number <- function(colname){
+  ret <- ncol(fread(colname, sep="\t", dec=".", header=TRUE, skip=0)[1,])
+  obj_name <- tools::file_path_sans_ext(basename(colname))
+  out <- data.frame(file=obj_name, colnumber=ret)
+  out
+}
+
+## split into 2 because reading all at once is too big
+#data1 <- ldply(flux.files2[1:41], read_column_number)
+
+#data2 <- ldply(flux.files2[151:167], read_column_number)
+
+## issue with files between 167-174 (zero KB files)
+#data3 <- ldply(flux.files2[174:314], read_column_number)
+
+#data4 <- ldply(flux.files2[314:500], read_column_number)
+
+#data5 <- ldply(flux.files2[500:727], read_column_number)
+
+#data6 <- ldply(flux.files2[727:980], read_column_number)
+
+#data7 <- ldply(flux.files2[980:1128], read_column_number)
+
+#data8 <- ldply(flux.files2[1128:1212], read_column_number)
+
+#data9 <- ldply(flux.files2[1213:1278], read_column_number)
+
+data10 <- ldply(flux.files2[1279:1388],read_column_number)
+
+## read the flux files as csv and combine into single dataframe
+#data <- rbind(data1, data2, data3, data4, data5, data6, data7)
+ 
+ data <- rbind(data1)
+
+# general column number is 211, select files
+# 10 Oct 2024 updated smartflux to collect all variables which increased columns from 211 to 215, add 215 to filter
+flux.files.read <- data %>%
+  filter(colnumber==207)%>%
+  mutate(file.path = paste("D:/summaries/",
+                          file,".txt",sep=''))
+
+# get column names and units from complete summary files
+# flux.units2 <- fread(flux.files.read[flux.files.read$colnumber==211,]$file.path[1], sep="\t", dec=".", header=TRUE, skip=0, fill = TRUE)[1,]
+
+# get data from complete summary files
+#flux.data2 <- do.call("rbind", lapply(flux.files.read$file.path[1:906], header = FALSE, fread, sep="\t", dec=".",skip = 2, fill=TRUE, na.strings="NaN", col.names=colnames(flux.units2)))
+
+# flux.data2 <- do.call("rbind", lapply(flux.files.read[flux.files.read$colnumber==211,]$file.path, header = FALSE, fread, sep="\t", dec=".",skip = 2, fill=TRUE, na.strings="NaN", col.names=colnames(flux.units2)))
+
+# format date_time variable
+# flux.data2 <- flux.data2 %>%
+#   mutate(date_time=ymd_hms(paste(date,time,sep=" ")))
+
+# 10 Oct 2024 updated smartflux to collect all variables which increased columns from 211 to 215 read all files with 215 columns seperately
+# get column names and units from complete summary files
+flux.units2.av <- fread( flux.files.read[flux.files.read$colnumber==207,]$file.path[2], sep="\t", dec=".", header=TRUE, skip=0, fill = TRUE)[1,]
+
+# get data from complete summary files
+#flux.data2.av <- do.call("rbind", lapply(flux.files.read$file.path[908:nrow(flux.files.read)], header = FALSE, fread, sep="\t", dec=".",skip = 2, fill=TRUE, na.strings="NaN", col.names=colnames(flux.units2.av)))
+# count total number of files with 215 columns of data,
+nrow.207 <- nrow(flux.files.read[flux.files.read$colnumber==207,])
+flux.data2.av <- do.call("rbind", lapply(flux.files.read[flux.files.read$colnumber==207,]$file.path[2:nrow.207], header = FALSE, fread, sep="\t", dec=".",skip = 2, fill=TRUE, na.strings="NaN", col.names=colnames(flux.units2.av)))
+
+# format date_time variable
+flux.data2.av <- flux.data2.av %>%
+  mutate(date_time=ymd_hms(paste(date,time,sep=" ")))
+
+# combine 211 column flux file with 215 row flux file
+# flux.data2 <- rbind(flux.data2, flux.data2.av, fill=TRUE)
+
+flux.data2 <- flux.data2.av
+
+
+# put flux.data2 in long format
+
+
+
+flux.long <- flux.data2 %>%
+  select(date, time, co2_flux, LE, H, co2_mole_fraction, h2o_mole_fraction, co2_signal_strength_7500_mean,
+         u_rot, v_rot, w_rot, P_RAIN_1_1_1, PPFD_1_1_1, LWOUT_1_1_1, LWIN_1_1_1, RG_1_1_1, RH_1_1_1, RN_1_1_1, SHF_1_1_1, SHF_2_1_1, SHF_3_1_1, SWC_1_1_1, SWC_2_1_1, SWC_3_1_1, SWIN_1_1_1, SWOUT_1_1_1, TA_1_1_1, TS_1_1_1, TS_2_1_1, TS_3_1_1, VIN_1_1_1, ALB_1_1_1, air_pressure) %>%
+  pivot_longer(!c(date, time), names_to="variable",values_to="value") %>%
+   mutate(date_time=ymd_hms(paste(date,time,sep=" ")))
+
+
+# Create data for footprint graphing   
+footprint.data <- flux.data2 %>%
+  select(date_time,`u*`,`x_90%`,`x_70%`,`x_50%`,`x_30%`,`x_10%`)%>%
+  filter(`u*`>0.2) %>%
+  drop_na
+          
+```
+# Plot any variables
+
+Column {.sidebar}
+-----------------------------
+
+### Select Date Range and Variables
+
+These graphs show most recent incoming SmartFlux data from the tower at Red Lake Playa. Data are 30min mean values.
+
+**Note: Flux calculations are preliminary and for visualisation only!!** 
+
+#### Last timestamp data updated:
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+print(max(flux.long$date_time))
+```
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+dateRangeInput("daterange", "Date range:",
+                 start = min(flux.long$date),
+                 end   = max(flux.long$date),
+                 min = min(flux.long$date),
+                 max = max(flux.long$date))
+
+selectInput("variable1", "Flux variable 1:",
+             c("CO2 Flux" = "co2_flux",
+               "Latent Heat Exhange" = "LE",
+               "Sensible Heat Flux" = "H",
+               "CO2 Mole Fraction" = "co2_mole_fraction",
+               "H2O Mole Fraction" = "h2o_mole_fraction",
+               "CO2 Signal Strength" = "co2_signal_strength_7500_mean",
+               "Rain" = "P_RAIN_1_1_1",
+               "Photosynthetic Photon Flux Density" = "PPFD_1_1_1",
+               "Long Wave Radiation Out" = "LWOUT_1_1_1",
+               "Long Wave Radiation In" = "LWIN_1_1_1",
+               "Short Wave Radiation Out" = "SWOUT_1_1_1",
+               "Short Wave Radiation In" = "SWIN_1_1_1",
+               "Atmospheric Pressure" = "^air_pressure",
+               "Air Temperature" = "^TA",
+               "Canopy Temperature" ="^TC",
+               "Albedo" = "^ALB",
+              "Global Radiation & PAR" = "^RG|^PPFD",
+              "Net Radiation" = "^RN",
+               "U" = "u_rot",
+               "V"="v_rot",
+               "W"="w_rot"))
+
+selectInput("variable2", "Flux variable 2:",
+             c("CO2 Flux" = "co2_flux",
+               "Latent Heat Exhange" = "LE",
+               "Sensible Heat Flux" = "H",
+               "CO2 Signal Strength" = "co2_signal_strength_7500_mean",
+               "Rain" = "P_RAIN_1_1_1",
+               "Photosynthetic Photon Flux Density" = "PPFD_1_1_1",
+               "Long Wave Radiation Out" = "LWOUT_1_1_1",
+               "Long Wave Radiation In" = "LWIN_1_1_1",
+               "Short Wave Radiation Out" = "SWOUT_1_1_1",
+               "Short Wave Radiation In" = "SWIN_1_1_1",
+               "Atmospheric Pressure" = "^air_pressure",
+               "Air Temperature" = "^TA",
+               "Canopy Temperature" ="^TC",
+               "Albedo" = "^ALB",
+              "Global Radiation & PAR" = "^RG|^PPFD",
+              "Net Radiation" = "^RN",
+               "U" = "u_rot",
+               "V"="v_rot",
+               "W"="w_rot"))
+
+selectInput("variable3", "Flux variable 3:",
+             c("CO2 Flux" = "co2_flux",
+               "Latent Heat Exhange" = "LE",
+               "Sensible Heat Flux" = "H",
+               "CO2 Signal Strength" = "co2_signal_strength_7500_mean",
+               "Rain" = "P_RAIN_1_1_1",
+               "Photosynthetic Photon Flux Density" = "PPFD_1_1_1",
+               "Long Wave Radiation Out" = "LWOUT_1_1_1",
+               "Long Wave Radiation In" = "LWIN_1_1_1",
+               "Short Wave Radiation Out" = "SWOUT_1_1_1",
+               "Short Wave Radiation In" = "SWIN_1_1_1",
+               "Atmospheric Pressure" = "^air_pressure",
+               "Air Temperature" = "^TA",
+               "Canopy Temperature" ="^TC",
+               "Albedo" = "^ALB",
+              "Global Radiation & PAR" = "^RG|^PPFD",
+              "Net Radiation" = "^RN",
+               "U" = "u_rot",
+               "V"="v_rot",
+               "W"="w_rot"))
+```
+
+Column
+-------------------------
+Graph three variables in parallel
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+renderPlot({
+  c <- flux.long %>%
+    filter(date >= input$daterange[[1]] & date <= input$daterange[[2]] &
+           str_detect(variable,input$variable1))
+  
+  ggplot(c, aes(date_time, value)) + 
+    labs(y=input$variable1)+
+     geom_line()+
+    geom_point(size=0.7, color="red")+
+    theme_bw()})
+     
+
+renderPlot({
+  c <- flux.long %>%
+    filter(date >= input$daterange[[1]] & date <= input$daterange[[2]] &
+           str_detect(variable,input$variable2))
+  
+  ggplot(c, aes(date_time, value)) +
+    labs(y=input$variable2)+
+    geom_line()+
+    geom_point(size=0.7, color="red")+
+    theme_bw()})
+
+renderPlot({
+  c <- flux.long %>%
+    filter(date >= input$daterange[[1]] & date <= input$daterange[[2]] &
+           str_detect(variable,input$variable3))
+  
+  ggplot(c, aes(date_time, value)) +
+    labs(y=input$variable3)+
+    geom_line()+
+    geom_point(size=0.7, color="red")+
+    theme_bw()})
+```
+
+# Plot Wind Data
+
+Column {.sidebar}
+-----------------------------
+  
+  ### Select Date Range and Variables
+  
+  These graphs show most recent incoming SmartFlux data from the tower at Red Lake Playa. Data are 30min mean values.
+
+**Note: Flux calculations are preliminary and for visualisation only!!** 
+  
+  
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+dateRangeInput("daterange2", "Date range:",
+               start = min(flux.long$date),
+               end   = max(flux.long$date),
+               min = min(flux.long$date),
+               max = max(flux.long$date))
+```
+
+Column
+-------------------------
+  
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+renderPlot({wind.dat <- flux.data2%>%
+  select(date,WS_1_1_1,WD_1_1_1, wind_speed, wind_dir)%>%
+  drop_na()%>%
+  filter((date >= input$daterange2[[1]] & date <= input$daterange2[[2]]))
+
+wind.2d <- plot.windrose(wind.dat,
+                         wind.dat$WS_1_1_1,
+                         wind.dat$WD_1_1_1)+
+  theme_bw()+
+  labs(title="2-D Anemometer")
+
+#
+wind.3d <- plot.windrose(wind.dat,
+                         wind.dat$wind_speed,
+                         wind.dat$wind_dir)+
+  theme_bw()+
+  labs(title="Sonic Anemometer")
+
+# graph 2-D and Sonic Wind Rose side-by-side
+plot_grid(wind.2d,wind.3d,labels=c("A","B"))
+})
+```
+
+# Plot Footprint Data
+
+Column
+-------------------------
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+dateRangeInput("daterange2", "Date range:",
+               start = min(flux.long$date),
+               end   = max(flux.long$date),
+               min = min(flux.long$date),
+               max = max(flux.long$date)) 
+
+# use windrose to plot footprints
+renderPlot({
+  
+  # use windrose function to make a footprint graph: ... it's a hack.
+  p1 <- plot.windrose(footprint.data,footprint.data$`x_90%`,footprint.data$WD_1_1_1,spdmax=1000,spdres=100)+
+    theme_bw()+
+    labs(title="Footprint direction & distance")
+  
+  p1})
+
+# histogram of footprint distance
+renderPlot({ggplot(footprint.data)+
+    geom_histogram(aes(`x_10%`),fill="blue")+
+    geom_histogram(aes(`x_30%`),fill="red")+
+    geom_histogram(aes(`x_50%`),fill="green")+
+    geom_histogram(aes(`x_70%`),fill="purple")+
+    geom_histogram(aes(`x_90%`),colour="grey")+
+    labs(x="Distance Contribution (m)")+
+    theme_bw()})
+```
+
+# Focus on Soil Data
+
+Column {.sidebar}
+---------------------------------------
+
+### Select Date Range and variables
+
+These graphs show most recent incoming Biomet data from the tower at Red Lake Playa. Data are 30min mean values.
+
+**Note: Flux calculations are preliminary and for visualisation only!!** 
+
+#### Last timestamp data updated:
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+print(max(flux.long$date_time))
+```
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+dateRangeInput("daterange3", "Date range:",
+                 start = min(flux.long$date),
+                 end   = max(flux.long$date),
+                 min = min(flux.long$date),
+                 max = max(flux.long$date))
+
+selectInput("variable4", "Biomet variable:",
+             c("Atmospheric Pressure" = "^air_pressure",
+               "Air Temperature" = "^TA",
+               "Canopy Temperature" ="^TC",
+               "Rainfall" =  "^P_RAIN",
+               "Longwave Radiation" = "^LWIN|^LWOUT",
+               "Shortwave Radiation" = "^SWIN|^SWOUT",
+               "Albedo" = "^ALB",
+              "Global Radiation & PAR" = "^RG|^PPFD",
+              "Net Radiation" = "^RN"))
+
+selectInput("variable5", "Soil variable 1:",
+             c("All Soil Temperature Profile" = "^TS_1",
+               "All Soil Temperature Integrated (0.5-15cm)" = "^TS_2|^TS_3",
+               "All Soil Moisture Profile" = "^SWC",
+               "All Soil Heat Flux (16cm)" ="^SHF",
+               "Soil Temperature 1 " ="^TS_1_1_1",
+               "Soil Temperature 2 " ="^TS_2_1_1",
+               "Soil Temperature 3 " ="^TS_3_1_1",
+               "Soil Moisture 1" ="^SWC_1_1_1",
+               "Soil Moisture 2" ="^SWC_2_1_1",
+               "Soil Moisture 3" ="^SWC_3_1_1"))
+
+selectInput("variable6", "Soil Variable 2:",
+            c("All Soil Temperature Profile" = "^TS_1",
+               "All Soil Temperature Integrated (0.5-15cm)" = "^TS_2|^TS_3",
+               "All Soil Moisture Profile" = "^SWC",
+               "All Soil Heat Flux (16cm)" ="^SHF",
+              "Soil Temperature 10cm" ="^TS_1_1_1",
+               "Soil Temperature 20cm" ="^TS_1_2_1",
+               "Soil Temperature 31cm" ="^TS_1_3_1",
+               "Soil Temperature 49cm" ="^TS_1_4_1",
+               "Soil Temperature 93cm" ="^TS_1_5_1",
+              "Soil Moisture 10cm" ="^SWC_1_1_1",
+               "Soil Moisture 20cm" ="^SWC_1_2_1",
+               "Soil Moisture 31cm" ="^SWC_1_3_1",
+               "Soil Moisture 49cm" ="^SWC_1_4_1",
+               "Soil Moisture 93cm" ="^SWC_1_5_1"))
+
+radioButtons("ax.scales", "Axis scales:",
+             c("Fixed" = "fixed", 
+               "Free x" = "free_x",
+               "Free y" = "free_y",
+               "Free x & y" = "free"))
+```
+
+Column
+-------------------------------------------------------------
+Graph Met and Soil Variables in Parallel  
+Profile measurements are at 10, 20, 31, 49, 93cm
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+# biomet plot
+renderPlot({
+    c <-  flux.long %>%
+  filter(str_detect(variable,input$variable4) &
+           (date >= input$daterange3[[1]] & date <= input$daterange3[[2]])) 
+  
+   # d <- plot.titles %>%
+   #   filter(selection1 == input$variable4)
+   #  # setnames(c,input$variable1,"selected")
+   # 
+    # plot
+     ggplot(c, aes(date_time, value))+
+    geom_line()+
+    #labs(title = d$name, y=d$name)+
+    facet_grid(variable~., scales = input$ax.scales)+
+ theme_bw()})
+
+# soil plot 1
+renderPlot({
+    c <-  flux.long %>%
+  filter(str_detect(variable,input$variable5) &
+           (date >= input$daterange3[[1]] & date <= input$daterange3[[2]])) 
+  
+   # d <- plot.titles %>%
+   #   filter(selection1 == input$variable5)
+   #  # setnames(c,input$variable1,"selected")
+ 
+    # plot
+     ggplot(c, aes(date_time, value, colour=variable))+
+    geom_line()+
+    #labs(title = d$name, y=d$name)+
+    facet_grid(variable~., scales = input$ax.scales)+
+ theme_bw()+
+       theme(legend.position="bottom")})
+
+# soil plot 2
+renderPlot({
+    c <-  flux.long %>%
+  filter(str_detect(variable,input$variable6) &
+           (date >= input$daterange3[[1]] & date <= input$daterange3[[2]])) 
+  
+   # d <- plot.titles %>%
+   #   filter(selection1 == input$variable5)
+   #  # setnames(c,input$variable1,"selected")
+ 
+    # plot
+     ggplot(c, aes(date_time, value, colour=variable))+
+    geom_line()+
+    #labs(title = d$name, y=d$name)+
+       facet_grid(input$variable3~.)+
+ theme_bw()+
+           facet_grid(variable~., scales = input$ax.scales)+
+       theme(legend.position = "bottom")})
+
+```
