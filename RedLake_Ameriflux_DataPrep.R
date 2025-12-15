@@ -60,7 +60,7 @@ data8 <- ldply(flux.files2[1128:1212], read_column_number)
 
 data9 <- ldply(flux.files2[1213:1278], read_column_number)
 
-data10 <- ldply(flux.files2[1279:1382],read_column_number)
+data10 <- ldply(flux.files2[1279:1403],read_column_number)
 
 data <- rbind(data1, data2, data3, data4, data5, data6, data7, data8, data9, data10)
 
