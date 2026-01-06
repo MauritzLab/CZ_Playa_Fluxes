@@ -57,7 +57,7 @@ read_column_number <- function(colname){
 
 #data9 <- ldply(flux.files2[1213:1278], read_column_number)
 
-data10 <- ldply(flux.files2[1279:1414],read_column_number)
+data10 <- ldply(flux.files2[1363:1428],read_column_number)
 
 ## read the flux files as csv and combine into single dataframe
 #data <- rbind(data1, data2, data3, data4, data5, data6, data7)
@@ -148,7 +148,7 @@ dateRangeInput("daterange", "Date range:",
 selectInput("variable1", "Flux variable 1:",
              c("CO2 Flux" = "co2_flux",
                "Latent Heat Exhange" = "LE",
-               "Sensible Heat Flux" = "H",
+               "Sensible Heat Flux" = "^H",
                "CO2 Mole Fraction" = "co2_mole_fraction",
                "H2O Mole Fraction" = "h2o_mole_fraction",
                "CO2 Signal Strength" = "co2_signal_strength_7500_mean",
@@ -171,7 +171,7 @@ selectInput("variable1", "Flux variable 1:",
 selectInput("variable2", "Flux variable 2:",
              c("CO2 Flux" = "co2_flux",
                "Latent Heat Exhange" = "LE",
-               "Sensible Heat Flux" = "H",
+               "Sensible Heat Flux" = "^H",
                "CO2 Signal Strength" = "co2_signal_strength_7500_mean",
                "Rain" = "P_RAIN_1_1_1",
                "Photosynthetic Photon Flux Density" = "PPFD_1_1_1",
@@ -192,7 +192,7 @@ selectInput("variable2", "Flux variable 2:",
 selectInput("variable3", "Flux variable 3:",
              c("CO2 Flux" = "co2_flux",
                "Latent Heat Exhange" = "LE",
-               "Sensible Heat Flux" = "H",
+               "Sensible Heat Flux" = "^H",
                "CO2 Signal Strength" = "co2_signal_strength_7500_mean",
                "Rain" = "P_RAIN_1_1_1",
                "Photosynthetic Photon Flux Density" = "PPFD_1_1_1",
