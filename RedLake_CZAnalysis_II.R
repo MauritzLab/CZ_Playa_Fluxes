@@ -6,7 +6,7 @@ library(data.table)
 library(ggplot2)
 library(lubridate)
 library(tidyr)
-library(plyr)
+#library(plyr)
 library(dplyr)
 library(zoo)
 library(readxl)
@@ -15,7 +15,7 @@ library(reshape2)
 library(bigleaf)
 
 
-setwd("C:/Users/vmartinez62/OneDrive - University of Texas at El Paso/Tower Data/JER_Playa/Data/SmartFlux/")
+setwd("C:/Users/memauritz/OneDrive - University of Texas at El Paso/Tower Data/JER_Playa/Data/SmartFlux/")
 
 flux <- read.csv("RedLake_Flux_20211112_20240411_SmartFlux_Output_filtered_sd.csv", header = TRUE)
 
