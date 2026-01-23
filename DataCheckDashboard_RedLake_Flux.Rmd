@@ -25,7 +25,7 @@ source(paste0("https://raw.githubusercontent.com/MargueriteM/R_functions/master/
 
 
 # get data from summaries folder
-flux.files2 <- list.files(path="C:/Users/memauritz/OneDrive - University of Texas at El Paso/Tower Data/JER_Playa/Data/Data_DL_Collect/SmartFlux/summaries",full.names=TRUE)
+flux.files2 <- list.files(path="C:/Users/mstolorunju/OneDrive - The University of Texas at El Paso/MauritzLAB/DrylandCriticalZone/Dryland Critical Zone - JER_Playa/Data/Data_DL_Collect/SmartFlux/summaries",full.names=TRUE)
 
 #flux.files2 <- list.files(path="C:/Users/vmartinez62/OneDrive - University of Texas at El Paso/CZO_data/Bahada/CR3000/L1/Flux/Bahada_CR3000_flux_L1_2025",full.names=TRUE)
 
@@ -57,7 +57,7 @@ data8 <- ldply(flux.files2[1128:1212], read_column_number)
 
 data9 <- ldply(flux.files2[1213:1278], read_column_number)
 
-data10 <- ldply(flux.files2[1279:1340],read_column_number)
+data10 <- ldply(flux.files2[1279:1446],read_column_number)
 
 ## read the flux files as csv and combine into single dataframe
 #data <- rbind(data1, data2, data3, data4, data5, data6, data7)
