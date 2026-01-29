@@ -470,3 +470,6 @@ renderPlot({
        theme(legend.position = "bottom")})
 
 ```
+
+# Link to Phenocam Data
+https://phenocam.nau.edu/webcam/sites/czdryredlake/ 
