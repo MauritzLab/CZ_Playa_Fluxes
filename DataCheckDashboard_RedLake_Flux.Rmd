@@ -57,7 +57,7 @@ read_column_number <- function(colname){
 
 #data9 <- ldply(flux.files2[1213:1278], read_column_number)
 
-data10 <- ldply(flux.files2[1363:1481],read_column_number)
+data10 <- ldply(flux.files2[1400:1494],read_column_number)
 
 ## read the flux files as csv and combine into single dataframe
 #data <- rbind(data1, data2, data3, data4, data5, data6, data7)
