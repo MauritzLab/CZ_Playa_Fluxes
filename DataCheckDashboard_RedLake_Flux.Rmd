@@ -24,7 +24,9 @@ source(paste0("https://raw.githubusercontent.com/MargueriteM/R_functions/master/
 # setwd("~/Desktop/OneDrive - University of Texas at El Paso/CZ_Drylands/JER_RedLakePlaya/Data/SmartFlux/results/2021/09")
 
 # UPDATE PATH FOR DATA CHECKS HERE
-onedrivepath <- "C:/Users/memauritz/OneDrive - University of Texas at El Paso/Tower Data/JER_Playa/Data/Data_DL_Collect/SmartFlux/summaries"
+# onedrivepath <- "C:/Users/memauritz/OneDrive - University of Texas at El Paso/Tower Data/JER_Playa/Data/Data_DL_Collect/SmartFlux/summaries"
+
+onedrivepath <- "C:/Users/memauritz/OneDrive - University of Texas at El Paso/CZO_data/data/RedLake/SmartFlux/L0/summaries/2026"
 
 # get data from summaries folder
 flux.files2 <- list.files(path=onedrivepath,full.names=TRUE)
@@ -57,7 +59,7 @@ read_column_number <- function(colname){
 
 #data9 <- ldply(flux.files2[1213:1278], read_column_number)
 
-data10 <- ldply(flux.files2[1500:1537],read_column_number)
+data10 <- ldply(flux.files2[1:154],read_column_number)
 
 ## read the flux files as csv and combine into single dataframe
 #data <- rbind(data1, data2, data3, data4, data5, data6, data7)
