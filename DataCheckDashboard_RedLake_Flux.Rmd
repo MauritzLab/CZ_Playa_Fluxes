@@ -23,11 +23,13 @@ source(paste0("https://raw.githubusercontent.com/MargueriteM/R_functions/master/
 # working directory (don't need to set, all file reads have full path)
 # setwd("~/Desktop/OneDrive - University of Texas at El Paso/CZ_Drylands/JER_RedLakePlaya/Data/SmartFlux/results/2021/09")
 
+# UPDATE PATH FOR DATA CHECKS HERE
+# onedrivepath <- "C:/Users/memauritz/OneDrive - University of Texas at El Paso/Tower Data/JER_Playa/Data/Data_DL_Collect/SmartFlux/summaries"
+
+onedrivepath <- "C:/Users/memauritz/OneDrive - University of Texas at El Paso/CZO_data/data/RedLake/SmartFlux/L0/summaries/2026"
 
 # get data from summaries folder
-flux.files2 <- list.files(path="C:/Users/mstolorunju/OneDrive - The University of Texas at El Paso/MauritzLAB/DrylandCriticalZone/Dryland Critical Zone - JER_Playa/Data/Data_DL_Collect/SmartFlux/summaries",full.names=TRUE)
-
-#flux.files2 <- list.files(path="C:/Users/vmartinez62/OneDrive - University of Texas at El Paso/CZO_data/Bahada/CR3000/L1/Flux/Bahada_CR3000_flux_L1_2025",full.names=TRUE)
+flux.files2 <- list.files(path=onedrivepath,full.names=TRUE)
 
 # read the column number for each summary file
 read_column_number <- function(colname){
@@ -69,7 +71,7 @@ data10 <- ldply(flux.files2[1279:1446],read_column_number)
 # 10 Oct 2024 updated smartflux to collect all variables which increased columns from 211 to 215, add 215 to filter
 flux.files.read <- data %>%
   filter(colnumber==211|colnumber==215) %>%
-  mutate(file.path = paste("C:/Users/memauritz/OneDrive - University of Texas at El Paso/Tower Data/JER_Playa/Data/Data_DL_Collect/SmartFlux/summaries/",
+  mutate(file.path = paste(onedrivepath,"/",
                           file,".txt",sep=''))
 
 # get column names and units from complete summary files
@@ -471,3 +473,6 @@ renderPlot({
        theme(legend.position = "bottom")})
 
 ```
+
+# Link to Phenocam Data
+https://phenocam.nau.edu/webcam/sites/czdryredlake/ 
